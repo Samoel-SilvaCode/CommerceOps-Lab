@@ -1,0 +1,26 @@
+PASS 01 GET   health       200
+PASS 02 GET   bootstrap    200
+PASS 03 POST  state        200
+PASS 04 POST  quote        200
+PASS 05 POST  orders       201
+PASS 06 POST  orders       409
+PASS 07 POST  quote        409
+PASS 08 POST  quote        422
+PASS 09 PATCH fulfillment  409
+PASS 10 POST  webhook      200
+PASS 11 POST  webhook      200
+PASS 12 POST  webhook      200
+PASS 13 POST  webhook      409
+PASS 14 PATCH fulfillment  200
+PASS 15 PATCH fulfillment  200
+PASS 16 POST  orders       201
+PASS 17 PATCH fulfillment  200
+PASS 18 PATCH fulfillment  409
+PASS 19 PATCH stock        200
+PASS 20 PATCH stock        422
+PASS 21 POST  sync         200
+PASS 22 POST  sync         200
+PASS 23 POST  health       405
+PASS 24 GET   nonexistent  404
+PASS 25 POST  state        401
+OK — 25 requisições HTTP verificadas.

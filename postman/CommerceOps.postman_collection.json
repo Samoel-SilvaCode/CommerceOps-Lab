@@ -1,0 +1,709 @@
+{
+  "info": {
+    "name": "CommerceOps Lab | API PHP",
+    "description": "Execute na ordem com Collection Runner. Altere baseUrl para o domínio publicado (sem barra final). Sessão independente do navegador. Pagamentos, fretes e marketplace simulados.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "demoToken",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "initialStock",
+      "value": ""
+    },
+    {
+      "key": "paymentEvent",
+      "value": ""
+    },
+    {
+      "key": "cancelOrder",
+      "value": ""
+    },
+    {
+      "key": "beforeCancel",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 · Health check",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 · Inicializar sessão",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=bootstrap"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);",
+              "pm.collectionVariables.set(\"initialStock\", r.state.products[0].stock);",
+              "pm.collectionVariables.set(\"paymentEvent\", \"postman-\" + Date.now());"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 · Consultar estado",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=state",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 · Calcular checkout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=quote",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"id\": \"SKU-101\",\n      \"qty\": 1\n    }\n  ],\n  \"cep\": \"89160-000\",\n  \"coupon\": \"DEMO10\",\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);",
+              "pm.test(\"Cupom, frete e total\", () => { pm.expect(r.data.discount).to.eql(2499); pm.expect(r.data.shipping).to.eql(1290); pm.expect(r.data.total).to.eql(23781); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 · Criar pedido",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=orders",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"id\": \"SKU-101\",\n      \"qty\": 1\n    }\n  ],\n  \"cep\": \"89160-000\",\n  \"coupon\": \"DEMO10\",\n  \"customer\": \"Cliente Postman\",\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);",
+              "pm.test(\"Reserva de estoque\", () => pm.expect(r.state.products[0].stock).to.eql(Number(pm.collectionVariables.get(\"initialStock\"))-1));",
+              "pm.collectionVariables.set(\"orderId\", r.data.order.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 · Rejeitar excesso de estoque",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=orders",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"id\": \"SKU-101\",\n      \"qty\": 99\n    }\n  ],\n  \"cep\": \"89160-000\",\n  \"coupon\": \"DEMO10\",\n  \"customer\": \"Teste inválido\",\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(false));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 · Rejeitar expedição antes do pagamento",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=fulfillment",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"status\": \"shipped\",\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(false));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 · Recusar pagamento",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=webhook",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"result\": \"failed\",\n  \"eventId\": \"{{paymentEvent}}-failed\",\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);",
+              "pm.test(\"Pedido pendente\", () => pm.expect(r.data.order.status).to.eql(\"pending\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 · Aprovar pagamento",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=webhook",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"result\": \"approved\",\n  \"eventId\": \"{{paymentEvent}}\",\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);",
+              "pm.test(\"Pedido pago\", () => pm.expect(r.data.order.status).to.eql(\"paid\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 · Repetir webhook",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=webhook",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"result\": \"approved\",\n  \"eventId\": \"{{paymentEvent}}\",\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);",
+              "pm.test(\"Idempotência\", () => pm.expect(r.data.duplicate).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 · Expedir pedido",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=fulfillment",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"status\": \"shipped\",\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);",
+              "pm.test(\"Rastreio emitido\", () => pm.expect(r.data.order.tracking).to.match(/^SIM-/));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 · Confirmar entrega",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=fulfillment",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"status\": \"delivered\",\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);",
+              "pm.test(\"Pedido entregue\", () => pm.expect(r.data.order.status).to.eql(\"delivered\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 · Criar pedido para cancelar",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=orders",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"id\": \"SKU-101\",\n      \"qty\": 1\n    }\n  ],\n  \"cep\": \"89160-000\",\n  \"coupon\": \"DEMO10\",\n  \"customer\": \"Cliente Cancelamento\",\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);",
+              "pm.collectionVariables.set(\"cancelOrder\", r.data.order.id);",
+              "pm.collectionVariables.set(\"beforeCancel\", r.state.products[0].stock);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 · Cancelar e devolver estoque",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=fulfillment",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{cancelOrder}}\",\n  \"status\": \"cancelled\",\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);",
+              "pm.test(\"Estoque devolvido\", () => pm.expect(r.state.products[0].stock).to.eql(Number(pm.collectionVariables.get(\"beforeCancel\"))+1));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 · Atualizar estoque",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=stock",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"SKU-104\",\n  \"stock\": 12,\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);",
+              "pm.test(\"Saldo atualizado\", () => pm.expect(r.data.product.stock).to.eql(12));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 · Sincronizar catálogo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=sync",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"result\": \"success\",\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);",
+              "pm.test(\"Catálogo sincronizado\", () => pm.expect(r.data.synced).to.eql(6));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 · Simular timeout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/index.php?action=sync",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"result\": \"error\",\n  \"_demoToken\": \"{{demoToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const r = pm.response.json();",
+              "pm.test(\"Envelope correto\", () => pm.expect(r.ok).to.eql(true));",
+              "if (r.token) pm.collectionVariables.set(\"demoToken\", r.token);",
+              "pm.test(\"Falha registrada\", () => pm.expect(r.state.events[0].level).to.eql(\"error\"));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
