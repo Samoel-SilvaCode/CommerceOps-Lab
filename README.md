@@ -71,3 +71,21 @@ python tests/smoke.py
 Resultado local: 25 requisições HTTP passaram, incluindo rejeição de estoque insuficiente, SKU duplicado acima do saldo, cupom inválido, pagamento recusado, duplicata, transição inválida, cancelamento e devolução de estoque, saldo inválido, erro de integração e token alterado. Sintaxe PHP e JavaScript verificadas. Coleção Postman fornecida, mas não executada no aplicativo Postman neste ambiente. Teste visual automatizado não concluído por bloqueio do navegador de teste ao localhost. Valide a experiência mobile e o deploy antes de compartilhar publicamente.
 
 Bootstrap: licença MIT, aviso preservado no CSS distribuído.
+
+## Versão 2 — Storefront e gestão
+
+A página inicial agora é a loja (`/#store`), com catálogo, categorias, pesquisa, ordenação, detalhes dos produtos e carrinho. A área administrativa está em `/#dashboard`; o laboratório de APIs, em `/#api`. A API PHP e suas regras de negócio permanecem as mesmas. A coleção Postman usa `https://commerceops-lab.vercel.app` como `baseUrl` inicial; altere para localhost se necessário.
+
+### Imagens e referências
+
+As imagens ilustram produtos fictícios, não anúncios ou modelos comerciais específicos. As artes locais em `assets/products` são ilustrações vetoriais próprias. Algumas fotografias de referência são carregadas via Pexels e possuem fallback local em caso de erro:
+
+- [Banner de estação de trabalho](https://www.pexels.com/photo/a-computer-monitor-headphones-and-mouse-on-a-desk-27559555/)
+- [Headphones](https://www.pexels.com/photo/black-studio-headphones-on-white-background-30428610/)
+- [Teclado](https://www.pexels.com/photo/modern-black-mechanical-keyboard-on-wooden-desk-36203655/)
+- [Mouse](https://www.pexels.com/photo/close-up-of-a-modern-white-wireless-mouse-32755767/)
+- [Monitor](https://www.pexels.com/photo/a-computer-monitor-on-a-desk-with-a-keyboard-and-mouse-27559482/)
+
+Referências de experiência de compra: Apple Store (apresentação e hierarquia), Magalu (busca, filtros) e Mercado Livre (categorias e navegação de compra). Identidade visual independente, sem associação comercial.
+
+Validação desta versão: 25 requisições HTTP aprovadas localmente; sintaxe JS validada. O ambiente de teste bloqueou o acesso do Chromium à página, portanto a validação visual automatizada e a disponibilidade das fotografias no navegador publicado ainda precisam ser conferidas. O deploy existente não foi alterado.
